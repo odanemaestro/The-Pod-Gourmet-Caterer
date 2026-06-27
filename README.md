@@ -1,4 +1,4 @@
-# The Pod Gourmet Catering — Menu Site & TV Display
+# The Pod Gourmet Caterer — Menu Site & TV Display
 
 Three things live in this folder:
 

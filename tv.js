@@ -1,119 +1,179 @@
 (function () {
-  const stage = document.getElementById("tvStage");
-  const strip = document.getElementById("tvDaystrip");
+  "use strict";
+
+  var stage = document.getElementById("tvStage");
+  var strip = document.getElementById("tvDaystrip");
+
+  function filterByCat(items, cat) {
+    var out = [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].cat === cat) out.push(items[i]);
+    }
+    return out;
+  }
+
+  function buildItemsHtml(items) {
+    var html = "";
+    for (var i = 0; i < items.length; i++) {
+      html += "<li>" + items[i].name + "</li>";
+    }
+    return html;
+  }
 
   // Build day strip dots
-  DAY_ORDER.forEach(day => {
-    const dot = document.createElement("div");
+  for (var d = 0; d < DAY_ORDER.length; d++) {
+    var day = DAY_ORDER[d];
+    var dot = document.createElement("div");
     dot.className = "tv-day-dot";
-    dot.dataset.day = day;
+    dot.setAttribute("data-day", day);
     dot.textContent = day;
     strip.appendChild(dot);
-  });
+  }
 
   // Build one panel per day
-  DAY_ORDER.forEach(day => {
-    const panel = document.createElement("div");
+  for (var p = 0; p < DAY_ORDER.length; p++) {
+    var dayName = DAY_ORDER[p];
+    var panel = document.createElement("div");
     panel.className = "tv-panel";
-    panel.dataset.day = day;
+    panel.setAttribute("data-day", dayName);
 
-    const proteins = MENU[day].items.filter(i => i.cat === "protein");
-    const soups = MENU[day].items.filter(i => i.cat === "soup");
-    const rice = MENU[day].items.filter(i => i.cat === "rice");
-    const side = MENU[day].items.filter(i => i.cat === "side");
-    const boiled = MENU[day].items.filter(i => i.cat === "boiled");
+    var items = MENU[dayName].items;
+    var proteins = filterByCat(items, "protein");
+    var soups = filterByCat(items, "soup");
+    var rice = filterByCat(items, "rice");
+    var side = filterByCat(items, "side");
+    var boiled = filterByCat(items, "boiled");
 
-    const head = document.createElement("div");
+    var head = document.createElement("div");
     head.className = "tv-panel-head";
-    head.innerHTML = `<h1 class="tv-panel-title">${day}</h1>` +
-      (MENU[day].note ? `<p class="tv-panel-note">${MENU[day].note}</p>` : "");
+    var headHtml = "<h1 class=\"tv-panel-title\">" + dayName + "</h1>";
+    if (MENU[dayName].note) {
+      headHtml += "<p class=\"tv-panel-note\">" + MENU[dayName].note + "</p>";
+    }
+    head.innerHTML = headHtml;
     panel.appendChild(head);
 
-    const cols = document.createElement("div");
+    var cols = document.createElement("div");
     cols.className = "tv-cols";
 
-    const mainsCount = proteins.length + soups.length;
-    const riceCount = rice.length + side.length;
-    const boiledCount = boiled.length;
+    var mainsCount = proteins.length + soups.length;
+    var riceCount = rice.length + side.length;
+    var boiledCount = boiled.length;
 
-    // Column 1: Mains (proteins + soup) — always present, gets density class
-    const col1 = document.createElement("div");
+    // Column 1: Mains (proteins + soup)
+    var col1 = document.createElement("div");
     col1.className = "tv-col" + (mainsCount > 6 ? " is-dense" : "");
-    col1.dataset.cat = "protein";
-    col1.innerHTML = `<div class="tv-col-label">Today's Mains</div>
-      <ul class="tv-col-items">${proteins.map(i => `<li>${i.name}</li>`).join("")}${soups.map(i => `<li>${i.name}</li>`).join("")}</ul>`;
+    col1.setAttribute("data-cat", "protein");
+    col1.innerHTML = "<div class=\"tv-col-label\">Today's Mains</div>" +
+      "<ul class=\"tv-col-items\">" + buildItemsHtml(proteins) + buildItemsHtml(soups) + "</ul>";
     cols.appendChild(col1);
 
-    // Column 2: Rice & Starch + Salads — always present
-    const col2 = document.createElement("div");
+    // Column 2: Rice & Starch + Salads
+    var col2 = document.createElement("div");
     col2.className = "tv-col" + (riceCount > 6 ? " is-dense" : "");
-    col2.dataset.cat = "rice";
-    col2.innerHTML = `<div class="tv-col-label">Rice, Starch &amp; Salads</div>
-      <ul class="tv-col-items">${rice.map(i => `<li>${i.name}</li>`).join("")}${side.map(i => `<li>${i.name}</li>`).join("")}</ul>`;
+    col2.setAttribute("data-cat", "rice");
+    col2.innerHTML = "<div class=\"tv-col-label\">Rice, Starch &amp; Salads</div>" +
+      "<ul class=\"tv-col-items\">" + buildItemsHtml(rice) + buildItemsHtml(side) + "</ul>";
     cols.appendChild(col2);
 
-    // Column 3: Boiled provisions — only render if there's anything boiled today
+    // Column 3: Boiled provisions, only if present
     if (boiledCount > 0) {
-      const col3 = document.createElement("div");
+      var col3 = document.createElement("div");
       col3.className = "tv-col" + (boiledCount > 6 ? " is-dense" : "");
-      col3.dataset.cat = "boiled";
-      col3.innerHTML = `<div class="tv-col-label">Boiled Today</div>
-        <ul class="tv-col-items">${boiled.map(i => `<li>${i.name}</li>`).join("")}</ul>`;
+      col3.setAttribute("data-cat", "boiled");
+      col3.innerHTML = "<div class=\"tv-col-label\">Boiled Today</div>" +
+        "<ul class=\"tv-col-items\">" + buildItemsHtml(boiled) + "</ul>";
       cols.appendChild(col3);
     }
 
-    // If boiled is empty, widen the other two columns to fill the space evenly
-    cols.classList.toggle("two-col", boiledCount === 0);
+    if (boiledCount === 0) {
+      cols.className = cols.className + " two-col";
+    }
 
     panel.appendChild(cols);
     stage.appendChild(panel);
-  });
+  }
 
-  const dayPanels = Array.from(document.querySelectorAll(".tv-panel"));
-  const dayDots = Array.from(document.querySelectorAll(".tv-day-dot"));
+  var dayPanels = document.querySelectorAll(".tv-panel");
+  var dayDots = document.querySelectorAll(".tv-day-dot");
+
+  function addClass(el, cls) {
+    if (el.className.indexOf(cls) === -1) {
+      el.className = el.className + " " + cls;
+    }
+  }
+  function removeClass(el, cls) {
+    el.className = el.className.replace(cls, "").replace(/\s+/g, " ").replace(/^\s|\s$/g, "");
+  }
 
   function setActiveDay(day) {
-    dayPanels.forEach(p => p.classList.toggle("is-active", p.dataset.day === day));
-    dayDots.forEach(d => d.classList.toggle("is-active", d.dataset.day === day));
+    var i;
+    for (i = 0; i < dayPanels.length; i++) {
+      if (dayPanels[i].getAttribute("data-day") === day) {
+        addClass(dayPanels[i], "is-active");
+      } else {
+        removeClass(dayPanels[i], "is-active");
+      }
+    }
+    for (i = 0; i < dayDots.length; i++) {
+      if (dayDots[i].getAttribute("data-day") === day) {
+        addClass(dayDots[i], "is-active");
+      } else {
+        removeClass(dayDots[i], "is-active");
+      }
+    }
   }
 
-  // Determine real "today"; if weekend, show Monday and let manual cycling work
+  // Determine real "today"; weekend falls back to Monday
   function getTodayName() {
-    const jsDay = new Date().getDay(); // 0=Sun..6=Sat
-    const idx = jsDay - 1; // Mon=0
-    return (idx >= 0 && idx < 5) ? DAY_ORDER[idx] : null;
+    var jsDay = new Date().getDay(); // 0=Sun..6=Sat
+    var idx = jsDay - 1; // Mon=0
+    if (idx >= 0 && idx < 5) {
+      return DAY_ORDER[idx];
+    }
+    return null;
   }
 
-  let currentDay = getTodayName() || "Monday";
+  var currentDay = getTodayName() || "Monday";
   setActiveDay(currentDay);
 
-  // Manual click-to-jump on dots (for staff override on a touch screen, harmless on passive TV)
-  dayDots.forEach(dot => {
-    dot.addEventListener("click", () => {
-      currentDay = dot.dataset.day;
-      setActiveDay(currentDay);
-    });
-  });
+  // Manual click-to-jump on dots
+  for (var k = 0; k < dayDots.length; k++) {
+    (function (dotEl) {
+      dotEl.onclick = function () {
+        currentDay = dotEl.getAttribute("data-day");
+        setActiveDay(currentDay);
+      };
+    })(dayDots[k]);
+  }
 
   // Clock
-  const clockEl = document.getElementById("tvClock");
+  var clockEl = document.getElementById("tvClock");
+  function padTwo(n) {
+    n = "" + n;
+    if (n.length < 2) {
+      return "0" + n;
+    }
+    return n;
+  }
   function tickClock() {
-    const now = new Date();
-    let h = now.getHours();
-    const m = now.getMinutes().toString().padStart(2, "0");
-    const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12 || 12;
-    clockEl.textContent = `${h}:${m} ${ampm}`;
+    var now = new Date();
+    var h = now.getHours();
+    var m = padTwo(now.getMinutes());
+    var ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    if (h === 0) h = 12;
+    clockEl.textContent = h + ":" + m + " " + ampm;
   }
   tickClock();
   setInterval(tickClock, 1000 * 15);
 
-  // Auto re-check the date at midnight-ish so the TV rolls to the new day on its own
-  setInterval(() => {
-    const real = getTodayName();
+  // Auto re-check the date so the TV rolls to the new day on its own
+  setInterval(function () {
+    var real = getTodayName();
     if (real && real !== currentDay) {
       currentDay = real;
       setActiveDay(currentDay);
     }
-  }, 1000 * 60); // check every minute
+  }, 1000 * 60);
 })();
